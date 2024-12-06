@@ -1,6 +1,18 @@
 # oklab camera
 
+Inspect the brightness and contrast design of your visual content with this webcam app by visualizing the Oklab color space.
+
 Deploy at: https://oklab-camera.surge.sh
+
+## About Oklab color space
+
+Oklab color consists of three components:
+
+"L" is luminosity,
+"a" runs from green to red,
+"b" runs from blue to yellow
+
+Learn more about oklab from [Björn Ottosson, A perceptual color space for image processing](https://bottosson.github.io/posts/oklab/)
 
 ## License
 
