@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 
+npm run build
 mkdir -p dist
 cp \
   index.html \
