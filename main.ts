@@ -83,7 +83,7 @@ async function init() {
   camera.canvas.style.height = scaled_size.height + 'px'
   console.log('canvas size:', camera.canvas.width, camera.canvas.height)
 
-  function createColorCanvas(index: number) {
+  function createColorCanvas(index: number, _row: number) {
     let { canvas, context } = createCanvas()
     canvas.width = camera.canvas.width
     canvas.height = camera.canvas.height
@@ -95,7 +95,8 @@ async function init() {
       canvas.dataset.size = 'minimap'
       canvas.style.width = camera.canvas.width / 3 + 'px'
       canvas.style.height = camera.canvas.height / 3 + 'px'
-      canvas.style.top = camera.canvas.height + 'px'
+      canvas.style.top =
+        camera.canvas.height + (color.row * canvas.height) / 3 + 'px'
       canvas.style.left = (index * canvas.width) / 3 + 'px'
     }
     function to_full() {
@@ -104,14 +105,14 @@ async function init() {
       canvas.style.height = camera.canvas.height + 'px'
       canvas.style.top = '0px'
       canvas.style.left = '0px'
-      if (L_color !== color) {
-        L_color.to_minimap()
-      }
-      if (a_color !== color) {
-        a_color.to_minimap()
-      }
-      if (b_color !== color) {
-        b_color.to_minimap()
+      let swap_row = color.row != 0
+      for (let each of colors) {
+        if (swap_row) {
+          each.row = 1 - each.row
+        }
+        if (each !== color) {
+          each.to_minimap()
+        }
       }
     }
     canvas.onclick = () => {
@@ -124,23 +125,45 @@ async function init() {
     function paint() {
       context.putImageData(imageData, 0, 0)
     }
-    let color = { canvas, imageData, paint, to_minimap, to_full }
+    let color = { canvas, imageData, paint, to_minimap, to_full, row: _row }
     return color
   }
 
-  let L_color = createColorCanvas(0)
-  let a_color = createColorCanvas(1)
-  let b_color = createColorCanvas(2)
+  let L_color = createColorCanvas(0, 0)
+  let a_color = createColorCanvas(1, 0)
+  let b_color = createColorCanvas(2, 0)
 
-  L_color.canvas.title = 'L color channel'
-  a_color.canvas.title = 'a color channel'
-  b_color.canvas.title = 'b color channel'
+  let R_color = createColorCanvas(0, 1)
+  let G_color = createColorCanvas(1, 1)
+  let B_color = createColorCanvas(2, 1)
+
+  let colors = [L_color, a_color, b_color, R_color, G_color, B_color]
+
+  L_color.canvas.title = 'Luminance channel'
+  a_color.canvas.title = 'green-red channel'
+  b_color.canvas.title = 'blue-yellow channel'
+
+  R_color.canvas.title = 'Red channel'
+  G_color.canvas.title = 'Green channel'
+  B_color.canvas.title = 'Blue channel'
 
   L_color.to_minimap()
   a_color.to_minimap()
   b_color.to_minimap()
 
-  Object.assign(window, { camera, L_color, a_color, b_color })
+  R_color.to_minimap()
+  G_color.to_minimap()
+  B_color.to_minimap()
+
+  Object.assign(window, {
+    camera,
+    L_color,
+    a_color,
+    b_color,
+    R_color,
+    G_color,
+    B_color,
+  })
 
   camera.canvas.onclick = () => {
     if (document.body.dataset.facing === 'user') {
@@ -185,21 +208,42 @@ async function init() {
       let a = ((oklab.a - range.a.min) / range.a.range) * 255
       let b = ((oklab.b - range.b.min) / range.b.range) * 255
 
+      // black to white
       L_color.imageData.data[i + 0] = L
       L_color.imageData.data[i + 1] = L
       L_color.imageData.data[i + 2] = L
 
+      // green to red
       a_color.imageData.data[i + 0] = a
-      a_color.imageData.data[i + 1] = a
-      a_color.imageData.data[i + 2] = a
+      a_color.imageData.data[i + 1] = 255 - a
+      a_color.imageData.data[i + 2] = 0
 
+      // blue to yellow
       b_color.imageData.data[i + 0] = b
       b_color.imageData.data[i + 1] = b
-      b_color.imageData.data[i + 2] = b
+      b_color.imageData.data[i + 2] = 255 - b
+
+      // black to red
+      R_color.imageData.data[i + 0] = rgb.r
+      R_color.imageData.data[i + 1] = 0
+      R_color.imageData.data[i + 2] = 0
+
+      // black to green
+      G_color.imageData.data[i + 0] = 0
+      G_color.imageData.data[i + 1] = rgb.g
+      G_color.imageData.data[i + 2] = 0
+
+      // black to blue
+      B_color.imageData.data[i + 0] = 0
+      B_color.imageData.data[i + 1] = 0
+      B_color.imageData.data[i + 2] = rgb.b
     }
     L_color.paint()
     a_color.paint()
     b_color.paint()
+    R_color.paint()
+    G_color.paint()
+    B_color.paint()
     await new Promise(resolve => requestAnimationFrame(resolve))
   }
 }
