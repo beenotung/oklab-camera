@@ -12,9 +12,12 @@
         background-color: black;
         image-rendering: pixelated;
       }
+      [data-facing='user'] canvas {
+        transform: scaleX(-1);
+      }
     </style>
   </head>
-  <body>
+  <body data-facing="environment">
     <script type="module" src="bundle.js"></script>
   </body>
 </html>

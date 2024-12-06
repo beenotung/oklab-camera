@@ -15,36 +15,37 @@ function createCanvas() {
   }
 }
 
-let camera = createCanvas()
-camera.canvas.title = 'full color channel'
-
-camera.canvas.style.inset = '0'
-camera.canvas.style.width = '100%'
-camera.canvas.style.height = '100%'
-
-let screen_rect = camera.canvas.getBoundingClientRect()
-console.log('screen rect:', screen_rect.width, screen_rect.height)
-
 let rgb = new_rgb()
 let oklab = new_oklab()
 
-function testSize() {
-  let width = screen_rect.width
-  let height = (video.videoHeight / video.videoWidth) * width
-  let area = width * height
-  let a = { width, height, area }
-
-  height = screen_rect.height
-  width = (video.videoWidth / video.videoHeight) * height
-  area = width * height
-  let b = { width, height, area }
-
-  return a.area > b.area ? b : a
-}
-
 async function init() {
+  let camera = createCanvas()
+  camera.canvas.title = 'full color channel'
+
+  camera.canvas.style.inset = '0'
+  camera.canvas.style.width = '100%'
+  camera.canvas.style.height = '100%'
+
+  let screen_rect = camera.canvas.getBoundingClientRect()
+  console.log('screen rect:', screen_rect.width, screen_rect.height)
+
+  function testSize() {
+    let width = screen_rect.width
+    let height = (video.videoHeight / video.videoWidth) * width
+    let area = width * height
+    let a = { width, height, area }
+
+    height = screen_rect.height
+    width = (video.videoWidth / video.videoHeight) * height
+    area = width * height
+    let b = { width, height, area }
+
+    return a.area > b.area ? b : a
+  }
+
   let stream = await navigator.mediaDevices.getUserMedia({
     video: {
+      facingMode: document.body.dataset.facing,
       width: screen_rect.width,
       height: screen_rect.height,
     },
@@ -62,6 +63,7 @@ async function init() {
 
   stream = await navigator.mediaDevices.getUserMedia({
     video: {
+      facingMode: document.body.dataset.facing,
       width: { min: min_size.width },
       height: { min: min_size.height },
     },
@@ -140,7 +142,26 @@ async function init() {
 
   Object.assign(window, { camera, L_color, a_color, b_color })
 
-  for (;;) {
+  camera.canvas.onclick = () => {
+    if (document.body.dataset.facing === 'user') {
+      document.body.dataset.facing = 'environment'
+    } else {
+      document.body.dataset.facing = 'user'
+    }
+    stop()
+    start()
+  }
+
+  function stop() {
+    active = false
+    camera.canvas.remove()
+    L_color.canvas.remove()
+    a_color.canvas.remove()
+    b_color.canvas.remove()
+  }
+
+  let active = true
+  for (; active; ) {
     camera.context.drawImage(
       video,
       0,
@@ -183,6 +204,10 @@ async function init() {
   }
 }
 
-init().catch(error => {
-  alert(String(error))
-})
+function start() {
+  init().catch(error => {
+    alert(String(error))
+  })
+}
+
+start()
