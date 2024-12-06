@@ -16,6 +16,7 @@ function createCanvas() {
 }
 
 let camera = createCanvas()
+camera.canvas.title = 'full color channel'
 
 camera.canvas.style.inset = '0'
 camera.canvas.style.width = '100%'
@@ -128,6 +129,10 @@ async function init() {
   let L_color = createColorCanvas(0)
   let a_color = createColorCanvas(1)
   let b_color = createColorCanvas(2)
+
+  L_color.canvas.title = 'L color channel'
+  a_color.canvas.title = 'a color channel'
+  b_color.canvas.title = 'b color channel'
 
   L_color.to_minimap()
   a_color.to_minimap()
