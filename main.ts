@@ -93,14 +93,24 @@ async function init() {
     }
     function to_minimap() {
       canvas.dataset.size = 'minimap'
+
+      // move color canvas
       canvas.style.width = camera.canvas.width / 3 + 'px'
       canvas.style.height = camera.canvas.height / 3 + 'px'
       canvas.style.top =
         camera.canvas.height + (color.row * canvas.height) / 3 + 'px'
       canvas.style.left = (index * canvas.width) / 3 + 'px'
+
+      // move camera canvas
+      camera.canvas.style.width = camera.canvas.width + 'px'
+      camera.canvas.style.height = camera.canvas.height + 'px'
+      camera.canvas.style.top = '0px'
+      camera.canvas.style.left = '0px'
     }
     function to_full() {
       canvas.dataset.size = 'full'
+
+      // move color canvas
       canvas.style.width = camera.canvas.width + 'px'
       canvas.style.height = camera.canvas.height + 'px'
       canvas.style.top = '0px'
@@ -114,6 +124,12 @@ async function init() {
           each.to_minimap()
         }
       }
+
+      // move camera canvas
+      camera.canvas.style.width = camera.canvas.width / 3 + 'px'
+      camera.canvas.style.height = camera.canvas.height / 3 + 'px'
+      camera.canvas.style.top = camera.canvas.height + 'px'
+      camera.canvas.style.left = (index * canvas.width) / 3 + 'px'
     }
     canvas.onclick = () => {
       if (canvas.dataset.size === 'minimap') {
