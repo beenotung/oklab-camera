@@ -19,6 +19,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "oklab.ts": "^2.2.7"
+    "oklab.ts": "^2.2.7",
+    "surge": "^0.24.6"
   }
 }
