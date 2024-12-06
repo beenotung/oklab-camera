@@ -194,9 +194,14 @@ async function init() {
   function stop() {
     active = false
     camera.canvas.remove()
-    L_color.canvas.remove()
-    a_color.canvas.remove()
-    b_color.canvas.remove()
+    for (let each of colors) {
+      each.canvas.remove()
+    }
+    stream.getTracks().forEach(track => {
+      track.stop()
+      stream.removeTrack(track)
+    })
+    video.srcObject = null
   }
 
   let active = true
