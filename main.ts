@@ -18,6 +18,8 @@ function createCanvas() {
 let rgb = new_rgb()
 let oklab = new_oklab()
 
+let colorful = true
+
 async function init() {
   let camera = createCanvas()
   camera.canvas.title = 'full color channel'
@@ -83,6 +85,23 @@ async function init() {
   camera.canvas.style.height = scaled_size.height + 'px'
   console.log('canvas size:', camera.canvas.width, camera.canvas.height)
 
+  function to_full_style(canvas: HTMLCanvasElement) {
+    canvas.dataset.size = 'full'
+    canvas.style.width = camera.canvas.width + 'px'
+    canvas.style.height = camera.canvas.height + 'px'
+    canvas.style.top = '0px'
+    canvas.style.left = '0px'
+  }
+  function to_minimap_style(color: ColorCanvas) {
+    let { index, row, canvas } = color
+    canvas.dataset.size = 'minimap'
+    canvas.style.width = camera.canvas.width / 3 + 'px'
+    canvas.style.height = camera.canvas.height / 3 + 'px'
+    canvas.style.top = camera.canvas.height + (row * canvas.height) / 3 + 'px'
+    canvas.style.left = (index * canvas.width) / 3 + 'px'
+  }
+
+  type ColorCanvas = ReturnType<typeof createColorCanvas>
   function createColorCanvas(index: number, _row: number) {
     let { canvas, context } = createCanvas()
     canvas.width = camera.canvas.width
@@ -92,29 +111,17 @@ async function init() {
       imageData.data[i + 3] = 255
     }
     function to_minimap() {
-      canvas.dataset.size = 'minimap'
-
       // move color canvas
-      canvas.style.width = camera.canvas.width / 3 + 'px'
-      canvas.style.height = camera.canvas.height / 3 + 'px'
-      canvas.style.top =
-        camera.canvas.height + (color.row * canvas.height) / 3 + 'px'
-      canvas.style.left = (index * canvas.width) / 3 + 'px'
+      to_minimap_style(color)
 
       // move camera canvas
-      camera.canvas.style.width = camera.canvas.width + 'px'
-      camera.canvas.style.height = camera.canvas.height + 'px'
-      camera.canvas.style.top = '0px'
-      camera.canvas.style.left = '0px'
+      to_full_style(camera.canvas)
     }
     function to_full() {
-      canvas.dataset.size = 'full'
+      // expand current color canvas
+      to_full_style(canvas)
 
-      // move color canvas
-      canvas.style.width = camera.canvas.width + 'px'
-      canvas.style.height = camera.canvas.height + 'px'
-      canvas.style.top = '0px'
-      canvas.style.left = '0px'
+      // move other color canvas
       let swap_row = color.row != 0
       for (let each of colors) {
         if (swap_row) {
@@ -132,18 +139,39 @@ async function init() {
       camera.canvas.style.left = (index * canvas.width) / 3 + 'px'
     }
     canvas.onclick = () => {
+      if (active_channel == color) {
+        colorful = !colorful
+        return
+      }
       if (canvas.dataset.size === 'minimap') {
+        // restore previous color canvas
+        if (active_channel) {
+          to_minimap_style(active_channel)
+        }
         to_full()
+        active_channel = color
       } else {
         to_minimap()
+        active_channel = null
       }
     }
     function paint() {
       context.putImageData(imageData, 0, 0)
     }
-    let color = { canvas, imageData, paint, to_minimap, to_full, row: _row }
+    let color = {
+      canvas,
+      imageData,
+      paint,
+      to_minimap,
+      to_full,
+      index,
+      row: _row,
+    }
+    to_minimap_style(color)
     return color
   }
+
+  let active_channel: ColorCanvas | null = null
 
   let L_color = createColorCanvas(0, 0)
   let a_color = createColorCanvas(1, 0)
@@ -163,14 +191,6 @@ async function init() {
   G_color.canvas.title = 'Green channel'
   B_color.canvas.title = 'Blue channel'
 
-  L_color.to_minimap()
-  a_color.to_minimap()
-  b_color.to_minimap()
-
-  R_color.to_minimap()
-  G_color.to_minimap()
-  B_color.to_minimap()
-
   Object.assign(window, {
     camera,
     L_color,
@@ -182,6 +202,12 @@ async function init() {
   })
 
   camera.canvas.onclick = () => {
+    if (active_channel) {
+      to_full_style(camera.canvas)
+      to_minimap_style(active_channel)
+      active_channel = null
+      return
+    }
     if (document.body.dataset.facing === 'user') {
       document.body.dataset.facing = 'environment'
     } else {
@@ -229,35 +255,67 @@ async function init() {
       let a = ((oklab.a - range.a.min) / range.a.range) * 255
       let b = ((oklab.b - range.b.min) / range.b.range) * 255
 
-      // black to white
-      L_color.imageData.data[i + 0] = L
-      L_color.imageData.data[i + 1] = L
-      L_color.imageData.data[i + 2] = L
+      if (colorful) {
+        // black to white
+        L_color.imageData.data[i + 0] = L
+        L_color.imageData.data[i + 1] = L
+        L_color.imageData.data[i + 2] = L
 
-      // green to red
-      a_color.imageData.data[i + 0] = a
-      a_color.imageData.data[i + 1] = 255 - a
-      a_color.imageData.data[i + 2] = 0
+        // green to red
+        a_color.imageData.data[i + 0] = a
+        a_color.imageData.data[i + 1] = 255 - a
+        a_color.imageData.data[i + 2] = 0
 
-      // blue to yellow
-      b_color.imageData.data[i + 0] = b
-      b_color.imageData.data[i + 1] = b
-      b_color.imageData.data[i + 2] = 255 - b
+        // blue to yellow
+        b_color.imageData.data[i + 0] = b
+        b_color.imageData.data[i + 1] = b
+        b_color.imageData.data[i + 2] = 255 - b
 
-      // black to red
-      R_color.imageData.data[i + 0] = rgb.r
-      R_color.imageData.data[i + 1] = 0
-      R_color.imageData.data[i + 2] = 0
+        // black to red
+        R_color.imageData.data[i + 0] = rgb.r
+        R_color.imageData.data[i + 1] = 0
+        R_color.imageData.data[i + 2] = 0
 
-      // black to green
-      G_color.imageData.data[i + 0] = 0
-      G_color.imageData.data[i + 1] = rgb.g
-      G_color.imageData.data[i + 2] = 0
+        // black to green
+        G_color.imageData.data[i + 0] = 0
+        G_color.imageData.data[i + 1] = rgb.g
+        G_color.imageData.data[i + 2] = 0
 
-      // black to blue
-      B_color.imageData.data[i + 0] = 0
-      B_color.imageData.data[i + 1] = 0
-      B_color.imageData.data[i + 2] = rgb.b
+        // black to blue
+        B_color.imageData.data[i + 0] = 0
+        B_color.imageData.data[i + 1] = 0
+        B_color.imageData.data[i + 2] = rgb.b
+      } else {
+        // black to white
+        L_color.imageData.data[i + 0] = L
+        L_color.imageData.data[i + 1] = L
+        L_color.imageData.data[i + 2] = L
+
+        // green to red
+        a_color.imageData.data[i + 0] = a
+        a_color.imageData.data[i + 1] = a
+        a_color.imageData.data[i + 2] = a
+
+        // blue to yellow
+        b_color.imageData.data[i + 0] = b
+        b_color.imageData.data[i + 1] = b
+        b_color.imageData.data[i + 2] = b
+
+        // black to red
+        R_color.imageData.data[i + 0] = rgb.r
+        R_color.imageData.data[i + 1] = rgb.r
+        R_color.imageData.data[i + 2] = rgb.r
+
+        // black to green
+        G_color.imageData.data[i + 0] = rgb.g
+        G_color.imageData.data[i + 1] = rgb.g
+        G_color.imageData.data[i + 2] = rgb.g
+
+        // black to blue
+        B_color.imageData.data[i + 0] = rgb.b
+        B_color.imageData.data[i + 1] = rgb.b
+        B_color.imageData.data[i + 2] = rgb.b
+      }
     }
     L_color.paint()
     a_color.paint()
