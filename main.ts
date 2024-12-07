@@ -219,7 +219,7 @@ async function init() {
       camera.canvas.width,
       camera.canvas.height,
     )
-    for (let i = 0; i <= camera_imageData.data.length; i += 4) {
+    for (let i = 0; i < camera_imageData.data.length; i += 4) {
       rgb.r = camera_imageData.data[i + 0]
       rgb.g = camera_imageData.data[i + 1]
       rgb.b = camera_imageData.data[i + 2]
